@@ -3,20 +3,27 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: MenuAI – AI-powered menu translation and allergen platform
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
-    description: Health operations
+  - name: restaurants
+  - name: menus
+  - name: sections
+  - name: dishes
+  - name: allergens
+  - name: translations
+  - name: analytics
+  - name: public
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +31,615 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ── Restaurants ──────────────────────────────────────────────
+  /restaurants:
+    get:
+      operationId: listRestaurants
+      tags: [restaurants]
+      summary: List all restaurants
+      responses:
+        "200":
+          description: List of restaurants
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Restaurant"
+    post:
+      operationId: createRestaurant
+      tags: [restaurants]
+      summary: Create a restaurant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRestaurantBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Restaurant"
+
+  /restaurants/{id}:
+    get:
+      operationId: getRestaurant
+      tags: [restaurants]
+      summary: Get a restaurant by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Restaurant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Restaurant"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateRestaurant
+      tags: [restaurants]
+      summary: Update a restaurant
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRestaurantBody"
+      responses:
+        "200":
+          description: Updated restaurant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Restaurant"
+    delete:
+      operationId: deleteRestaurant
+      tags: [restaurants]
+      summary: Delete a restaurant
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Menus ────────────────────────────────────────────────────
+  /restaurants/{restaurantId}/menus:
+    get:
+      operationId: listMenus
+      tags: [menus]
+      summary: List menus for a restaurant
+      parameters:
+        - name: restaurantId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of menus
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Menu"
+    post:
+      operationId: createMenu
+      tags: [menus]
+      summary: Create a menu
+      parameters:
+        - name: restaurantId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMenuBody"
+      responses:
+        "201":
+          description: Created menu
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Menu"
+
+  /menus/{id}:
+    get:
+      operationId: getMenu
+      tags: [menus]
+      summary: Get a full menu with sections and dishes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Full menu
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MenuWithSections"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateMenu
+      tags: [menus]
+      summary: Update a menu
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMenuBody"
+      responses:
+        "200":
+          description: Updated menu
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Menu"
+    delete:
+      operationId: deleteMenu
+      tags: [menus]
+      summary: Delete a menu
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /menus/{id}/translate:
+    post:
+      operationId: translateMenu
+      tags: [menus]
+      summary: AI-translate all dishes in a menu to selected languages
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TranslateMenuBody"
+      responses:
+        "200":
+          description: Translation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranslateMenuResult"
+
+  /menus/{id}/detect-allergens:
+    post:
+      operationId: detectAllergens
+      tags: [menus]
+      summary: AI-detect allergens for all dishes in a menu
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Detection result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DetectAllergensResult"
+
+  # ── Sections ─────────────────────────────────────────────────
+  /menus/{menuId}/sections:
+    post:
+      operationId: createSection
+      tags: [sections]
+      summary: Create a section in a menu
+      parameters:
+        - name: menuId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSectionBody"
+      responses:
+        "201":
+          description: Created section
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Section"
+
+  /sections/{id}:
+    patch:
+      operationId: updateSection
+      tags: [sections]
+      summary: Update a section
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSectionBody"
+      responses:
+        "200":
+          description: Updated section
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Section"
+    delete:
+      operationId: deleteSection
+      tags: [sections]
+      summary: Delete a section
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Dishes ───────────────────────────────────────────────────
+  /sections/{sectionId}/dishes:
+    post:
+      operationId: createDish
+      tags: [dishes]
+      summary: Create a dish in a section
+      parameters:
+        - name: sectionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDishBody"
+      responses:
+        "201":
+          description: Created dish
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dish"
+
+  /dishes/{id}:
+    get:
+      operationId: getDish
+      tags: [dishes]
+      summary: Get a dish with its allergens, labels, and translations
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Dish detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DishDetail"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateDish
+      tags: [dishes]
+      summary: Update a dish
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDishBody"
+      responses:
+        "200":
+          description: Updated dish
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dish"
+    delete:
+      operationId: deleteDish
+      tags: [dishes]
+      summary: Delete a dish
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /dishes/{id}/availability:
+    patch:
+      operationId: toggleDishAvailability
+      tags: [dishes]
+      summary: Toggle dish availability (86 a dish or restore it)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ToggleDishAvailabilityBody"
+      responses:
+        "200":
+          description: Updated dish
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dish"
+
+  # ── Allergens ────────────────────────────────────────────────
+  /dishes/{dishId}/allergens:
+    post:
+      operationId: addAllergen
+      tags: [allergens]
+      summary: Add an allergen to a dish
+      parameters:
+        - name: dishId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddAllergenBody"
+      responses:
+        "201":
+          description: Created allergen
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Allergen"
+
+  /allergens/{id}:
+    patch:
+      operationId: updateAllergen
+      tags: [allergens]
+      summary: Confirm or override an allergen flag
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAllergenBody"
+      responses:
+        "200":
+          description: Updated allergen
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Allergen"
+    delete:
+      operationId: deleteAllergen
+      tags: [allergens]
+      summary: Remove an allergen from a dish
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Analytics (wow endpoints) ─────────────────────────────────
+  /restaurants/{id}/analytics/summary:
+    get:
+      operationId: getRestaurantAnalyticsSummary
+      tags: [analytics]
+      summary: Get dashboard summary for a restaurant
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Analytics summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyticsSummary"
+
+  /restaurants/{id}/analytics/popular-dishes:
+    get:
+      operationId: getPopularDishes
+      tags: [analytics]
+      summary: Get most-viewed dishes from QR menu
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Popular dishes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PopularDish"
+
+  /restaurants/{id}/specials:
+    get:
+      operationId: getTonightSpecials
+      tags: [restaurants]
+      summary: Get tonight's specials for a restaurant
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Tonight's specials
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Dish"
+    patch:
+      operationId: updateTonightSpecials
+      tags: [restaurants]
+      summary: Set tonight's specials (mark dishes as specials)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSpecialsBody"
+      responses:
+        "200":
+          description: Updated specials
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Dish"
+
+  # ── Public digital menu (QR code endpoint) ────────────────────
+  /public/menu/{slug}:
+    get:
+      operationId: getPublicMenu
+      tags: [public]
+      summary: Get the public digital menu for a QR code slug
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: lang
+          in: query
+          required: false
+          schema:
+            type: string
+            default: "en"
+      responses:
+        "200":
+          description: Public digital menu
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicMenu"
+        "404":
+          description: Not found
+
+  /public/menu/{slug}/view:
+    post:
+      operationId: recordDishView
+      tags: [public]
+      summary: Record a dish view event (analytics)
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordDishViewBody"
+      responses:
+        "204":
+          description: Recorded
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +647,532 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    # ── Restaurant ─────────────────────────────────────────────
+    Restaurant:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        neighborhood:
+          type: ["string", "null"]
+        logoUrl:
+          type: ["string", "null"]
+        cuisineType:
+          type: ["string", "null"]
+        tier:
+          type: string
+          enum: [standard, hotel]
+        primaryLanguage:
+          type: string
+          default: "en"
+        supportedLanguages:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, name, slug, tier, primaryLanguage, supportedLanguages, createdAt, updatedAt]
+
+    CreateRestaurantBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        neighborhood:
+          type: ["string", "null"]
+        logoUrl:
+          type: ["string", "null"]
+        cuisineType:
+          type: ["string", "null"]
+        tier:
+          type: string
+          enum: [standard, hotel]
+        primaryLanguage:
+          type: string
+          default: "en"
+        supportedLanguages:
+          type: array
+          items:
+            type: string
+      required: [name]
+
+    UpdateRestaurantBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        neighborhood:
+          type: ["string", "null"]
+        logoUrl:
+          type: ["string", "null"]
+        cuisineType:
+          type: ["string", "null"]
+        tier:
+          type: string
+          enum: [standard, hotel]
+        primaryLanguage:
+          type: string
+        supportedLanguages:
+          type: array
+          items:
+            type: string
+
+    # ── Menu ───────────────────────────────────────────────────
+    Menu:
+      type: object
+      properties:
+        id:
+          type: integer
+        restaurantId:
+          type: integer
+        name:
+          type: string
+        qrSlug:
+          type: string
+        status:
+          type: string
+          enum: [draft, published, archived]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, restaurantId, name, qrSlug, status, createdAt, updatedAt]
+
+    MenuWithSections:
+      type: object
+      properties:
+        id:
+          type: integer
+        restaurantId:
+          type: integer
+        name:
+          type: string
+        qrSlug:
+          type: string
+        status:
+          type: string
+          enum: [draft, published, archived]
+        sections:
+          type: array
+          items:
+            $ref: "#/components/schemas/SectionWithDishes"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, restaurantId, name, qrSlug, status, sections, createdAt, updatedAt]
+
+    CreateMenuBody:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum: [draft, published, archived]
+      required: [name]
+
+    UpdateMenuBody:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum: [draft, published, archived]
+
+    TranslateMenuBody:
+      type: object
+      properties:
+        languages:
+          type: array
+          items:
+            type: string
+      required: [languages]
+
+    TranslateMenuResult:
+      type: object
+      properties:
+        translatedDishes:
+          type: integer
+        languages:
+          type: array
+          items:
+            type: string
+      required: [translatedDishes, languages]
+
+    DetectAllergensResult:
+      type: object
+      properties:
+        processedDishes:
+          type: integer
+        flaggedAllergens:
+          type: integer
+      required: [processedDishes, flaggedAllergens]
+
+    # ── Section ────────────────────────────────────────────────
+    Section:
+      type: object
+      properties:
+        id:
+          type: integer
+        menuId:
+          type: integer
+        name:
+          type: string
+        sortOrder:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, menuId, name, sortOrder, createdAt]
+
+    SectionWithDishes:
+      type: object
+      properties:
+        id:
+          type: integer
+        menuId:
+          type: integer
+        name:
+          type: string
+        sortOrder:
+          type: integer
+        dishes:
+          type: array
+          items:
+            $ref: "#/components/schemas/DishDetail"
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, menuId, name, sortOrder, dishes, createdAt]
+
+    CreateSectionBody:
+      type: object
+      properties:
+        name:
+          type: string
+        sortOrder:
+          type: integer
+      required: [name]
+
+    UpdateSectionBody:
+      type: object
+      properties:
+        name:
+          type: string
+        sortOrder:
+          type: integer
+
+    # ── Dish ───────────────────────────────────────────────────
+    Dish:
+      type: object
+      properties:
+        id:
+          type: integer
+        sectionId:
+          type: integer
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        price:
+          type: ["number", "null"]
+        currency:
+          type: string
+          default: "KES"
+        imageUrl:
+          type: ["string", "null"]
+        isAvailable:
+          type: boolean
+          default: true
+        isSpecial:
+          type: boolean
+          default: false
+        sortOrder:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, sectionId, name, currency, isAvailable, isSpecial, sortOrder, createdAt, updatedAt]
+
+    DishDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        sectionId:
+          type: integer
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        price:
+          type: ["number", "null"]
+        currency:
+          type: string
+        imageUrl:
+          type: ["string", "null"]
+        isAvailable:
+          type: boolean
+        isSpecial:
+          type: boolean
+        sortOrder:
+          type: integer
+        allergens:
+          type: array
+          items:
+            $ref: "#/components/schemas/Allergen"
+        dietaryLabels:
+          type: array
+          items:
+            type: string
+        translations:
+          type: array
+          items:
+            $ref: "#/components/schemas/DishTranslation"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, sectionId, name, currency, isAvailable, isSpecial, sortOrder, allergens, dietaryLabels, translations, createdAt, updatedAt]
+
+    CreateDishBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        price:
+          type: ["number", "null"]
+        currency:
+          type: string
+          default: "KES"
+        imageUrl:
+          type: ["string", "null"]
+        isAvailable:
+          type: boolean
+          default: true
+        isSpecial:
+          type: boolean
+          default: false
+        sortOrder:
+          type: integer
+        dietaryLabels:
+          type: array
+          items:
+            type: string
+      required: [name]
+
+    UpdateDishBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        price:
+          type: ["number", "null"]
+        currency:
+          type: string
+        imageUrl:
+          type: ["string", "null"]
+        isAvailable:
+          type: boolean
+        isSpecial:
+          type: boolean
+        sortOrder:
+          type: integer
+        dietaryLabels:
+          type: array
+          items:
+            type: string
+
+    ToggleDishAvailabilityBody:
+      type: object
+      properties:
+        isAvailable:
+          type: boolean
+      required: [isAvailable]
+
+    # ── Allergen ───────────────────────────────────────────────
+    Allergen:
+      type: object
+      properties:
+        id:
+          type: integer
+        dishId:
+          type: integer
+        allergenType:
+          type: string
+          enum: [gluten, dairy, nuts, peanuts, eggs, soy, shellfish, fish, sesame, sulphites, celery, mustard, lupin, molluscs]
+        isAiSuggested:
+          type: boolean
+        isConfirmed:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, dishId, allergenType, isAiSuggested, isConfirmed, createdAt]
+
+    AddAllergenBody:
+      type: object
+      properties:
+        allergenType:
+          type: string
+          enum: [gluten, dairy, nuts, peanuts, eggs, soy, shellfish, fish, sesame, sulphites, celery, mustard, lupin, molluscs]
+        isAiSuggested:
+          type: boolean
+          default: false
+        isConfirmed:
+          type: boolean
+          default: true
+      required: [allergenType]
+
+    UpdateAllergenBody:
+      type: object
+      properties:
+        isConfirmed:
+          type: boolean
+
+    # ── Translation ────────────────────────────────────────────
+    DishTranslation:
+      type: object
+      properties:
+        id:
+          type: integer
+        dishId:
+          type: integer
+        languageCode:
+          type: string
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        culinaryExplanation:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, dishId, languageCode, name, createdAt]
+
+    # ── Analytics ──────────────────────────────────────────────
+    AnalyticsSummary:
+      type: object
+      properties:
+        totalDishes:
+          type: integer
+        availableDishes:
+          type: integer
+        unavailableDishes:
+          type: integer
+        translatedDishes:
+          type: integer
+        allergensConfirmed:
+          type: integer
+        allergensPendingReview:
+          type: integer
+        totalMenuViews:
+          type: integer
+        menus:
+          type: integer
+        specialsCount:
+          type: integer
+        languagesCovered:
+          type: array
+          items:
+            type: string
+      required: [totalDishes, availableDishes, unavailableDishes, translatedDishes, allergensConfirmed, allergensPendingReview, totalMenuViews, menus, specialsCount, languagesCovered]
+
+    PopularDish:
+      type: object
+      properties:
+        dishId:
+          type: integer
+        name:
+          type: string
+        sectionName:
+          type: string
+        viewCount:
+          type: integer
+        price:
+          type: ["number", "null"]
+        currency:
+          type: string
+        imageUrl:
+          type: ["string", "null"]
+      required: [dishId, name, sectionName, viewCount, currency]
+
+    UpdateSpecialsBody:
+      type: object
+      properties:
+        dishIds:
+          type: array
+          items:
+            type: integer
+      required: [dishIds]
+
+    # ── Public Menu ────────────────────────────────────────────
+    PublicMenu:
+      type: object
+      properties:
+        restaurantName:
+          type: string
+        restaurantLogo:
+          type: ["string", "null"]
+        menuName:
+          type: string
+        language:
+          type: string
+        availableLanguages:
+          type: array
+          items:
+            type: string
+        sections:
+          type: array
+          items:
+            $ref: "#/components/schemas/SectionWithDishes"
+        specials:
+          type: array
+          items:
+            $ref: "#/components/schemas/DishDetail"
+      required: [restaurantName, menuName, language, availableLanguages, sections, specials]
+
+    RecordDishViewBody:
+      type: object
+      properties:
+        dishId:
+          type: integer
+      required: [dishId]

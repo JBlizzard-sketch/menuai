@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "MenuAI"
+version = "1.0.0"
+id = "artifacts/menuai"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22761
+
+[services.development]
+run = "pnpm --filter @workspace/menuai run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/menuai", "run", "build" ]
+publicDir = "artifacts/menuai/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22761"
+BASE_PATH = "/"
