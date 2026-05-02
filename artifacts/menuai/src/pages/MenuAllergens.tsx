@@ -59,7 +59,7 @@ export default function MenuAllergens() {
 
   function confirmAllergen(allergenId: number) {
     updateAllergen.mutate(
-      { id: allergenId, data: { isConfirmed: true, isAiSuggested: false } },
+      { id: allergenId, data: { isConfirmed: true } },
       { onSuccess: invalidate }
     );
   }

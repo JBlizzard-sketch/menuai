@@ -7,6 +7,7 @@ import {
   useAddAllergen,
   useDeleteAllergen,
 } from "@workspace/api-client-react";
+import type { AddAllergenBodyAllergenType } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,7 +40,7 @@ export default function DishDetail() {
   const params = useParams();
   const id = Number(params.id);
   const queryClient = useQueryClient();
-  const [newAllergen, setNewAllergen] = useState("");
+  const [newAllergen, setNewAllergen] = useState<AddAllergenBodyAllergenType | "">("");
   const [selectedLang, setSelectedLang] = useState("fr");
 
   const { data: dish, isLoading } = useGetDish(id, {
@@ -72,7 +73,7 @@ export default function DishDetail() {
   function handleAddAllergen() {
     if (!newAllergen) return;
     addAllergen.mutate(
-      { dishId: id, data: { allergenType: newAllergen as Allergen["allergenType"], isConfirmed: true, isAiSuggested: false } },
+      { dishId: id, data: { allergenType: newAllergen as AddAllergenBodyAllergenType, isConfirmed: true, isAiSuggested: false } },
       {
         onSuccess: () => {
           setNewAllergen("");
@@ -203,7 +204,7 @@ export default function DishDetail() {
 
             {availableAllergens.length > 0 && (
               <div className="flex gap-2">
-                <Select value={newAllergen} onValueChange={setNewAllergen}>
+                <Select value={newAllergen} onValueChange={(v) => setNewAllergen(v as AddAllergenBodyAllergenType)}>
                   <SelectTrigger className="w-44">
                     <SelectValue placeholder="Add allergen…" />
                   </SelectTrigger>

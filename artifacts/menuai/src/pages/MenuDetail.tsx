@@ -6,6 +6,7 @@ import {
   useToggleDishAvailability,
   useUpdateDish,
 } from "@workspace/api-client-react";
+import type { SectionWithDishes, DishDetail as DishDetailType } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,16 +20,6 @@ const ALLERGEN_ICONS: Record<string, string> = {
   soy: "🫘", shellfish: "🦐", fish: "🐟", sesame: "🌿", sulphites: "🍷",
   celery: "🥬", mustard: "🟡", lupin: "🌸", molluscs: "🦪",
 };
-
-type Allergen = { id: number; allergenType: string; isAiSuggested: boolean; isConfirmed: boolean };
-type Dish = {
-  id: number; name: string; description?: string | null;
-  price: number | null; currency: string | null;
-  isAvailable: boolean; isSpecial: boolean;
-  allergens?: Allergen[]; translations?: unknown[];
-  dietaryLabels?: string[];
-};
-type Section = { id: number; name: string; dishes?: Dish[] };
 
 export default function MenuDetail() {
   const params = useParams();
@@ -61,20 +52,20 @@ export default function MenuDetail() {
   }
 
   const totalDishes = menu?.sections?.reduce(
-    (acc: number, s: Section) => acc + (s.dishes?.length ?? 0), 0
+    (acc: number, s: SectionWithDishes) => acc + (s.dishes?.length ?? 0), 0
   ) ?? 0;
 
   const pendingAllergens = menu?.sections?.reduce(
-    (acc: number, s: Section) =>
+    (acc: number, s: SectionWithDishes) =>
       acc + (s.dishes?.reduce(
-        (a: number, d: Dish) =>
+        (a: number, d: DishDetailType) =>
           a + (d.allergens?.filter((al) => al.isAiSuggested && !al.isConfirmed).length ?? 0), 0
       ) ?? 0), 0
   ) ?? 0;
 
   const translatedCount = menu?.sections?.reduce(
-    (acc: number, s: Section) =>
-      acc + (s.dishes?.filter((d: Dish) => (d.translations?.length ?? 0) > 0).length ?? 0), 0
+    (acc: number, s: SectionWithDishes) =>
+      acc + (s.dishes?.filter((d: DishDetailType) => (d.translations?.length ?? 0) > 0).length ?? 0), 0
   ) ?? 0;
 
   return (
@@ -143,17 +134,17 @@ export default function MenuDetail() {
 
           {/* Sections */}
           <div className="space-y-6">
-            {menu?.sections?.map((section: Section) => (
+            {menu?.sections?.map((section: SectionWithDishes) => (
               <Card key={section.id}>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg">{section.name}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {section.dishes?.map((dish: Dish) => {
+                  {section.dishes?.map((dish: DishDetailType) => {
                     const hasPendingAllergens = dish.allergens?.some(
-                      (a) => a.isAiSuggested && !a.isConfirmed
+                      (a: { isAiSuggested: boolean; isConfirmed: boolean }) => a.isAiSuggested && !a.isConfirmed
                     );
-                    const confirmedAllergens = dish.allergens?.filter((a) => a.isConfirmed) ?? [];
+                    const confirmedAllergens = dish.allergens?.filter((a: { isConfirmed: boolean }) => a.isConfirmed) ?? [];
                     const hasTranslations = (dish.translations?.length ?? 0) > 0;
 
                     return (
